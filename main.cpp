@@ -162,7 +162,7 @@ void feed_forward ( ) noexcept {}
     int n;
     std::memcpy ( &n, &net_alpha_, 1 );
     n >>= 31;
-    net_alpha_ *= ( float ) n + rectifier_alpha_ * ( float ) ( ( int ) not( bool ) n );
+    net_alpha_ *= ( float ) n + rectifier_alpha_ * ( float ) not( ( bool ) n );
     return std::forward<float> ( net_alpha_ );
 }
 [[nodiscard]] float leaky_rectifier_activation ( float net_alpha_ ) noexcept {
@@ -208,7 +208,7 @@ int main ( ) {
     float *p = &*std::next ( out.rbegin ( ) ), *x_ = &*x.rbegin ( );
 
     for ( auto & o : reverse_container_adaptor ( out ) )
-        e += std::abs ( ( *p-- += derivative_normalized_exponential_function_activation ( o - *x_-- ) ) );
+        e += std::abs ( ( *p-- += derivative_function_activation ( o - *x_-- ) ) );
 
     float_span hid = { t.data ( ) + Inp, out.data ( ) };
 
