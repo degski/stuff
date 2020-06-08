@@ -150,15 +150,6 @@ void feed_forward ( ) noexcept {}
     elliotsig_activation_ *= elliotsig_activation_;
     return std::forward<float> ( elliotsig_activation_ );
 }
-
-float top_bit ( float net_alpha_ ) noexcept {
-    int n;
-    std::memcpy ( &n, &net_alpha_, 1 );
-    n >>= 31;
-    net_alpha_ = ( net_alpha_ * n ) + ( 0.0f * net_alpha_ * ( not n ) );
-    return std::forward<float> ( net_alpha_ );
-}
-
 [[nodiscard]] float rectifier_activation ( float net_alpha_ ) noexcept {
     net_alpha_ *= net_alpha_ >= 0.0f;
     return std::forward<float> ( net_alpha_ );
@@ -171,7 +162,7 @@ float top_bit ( float net_alpha_ ) noexcept {
     int n;
     std::memcpy ( &n, &net_alpha_, 1 );
     n >>= 31;
-    net_alpha_ *= n + rectifier_alpha_ * ( float ) ( ( int ) not( bool ) n );
+    net_alpha_ *= ( float ) n + rectifier_alpha_ * ( float ) ( ( int ) not( bool ) n );
     return std::forward<float> ( net_alpha_ );
 }
 [[nodiscard]] float leaky_rectifier_activation ( float net_alpha_ ) noexcept {
