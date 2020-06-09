@@ -142,6 +142,8 @@ void feed_forward ( ) noexcept {}
 // First, we propose a Parametric Rectified Linear Unit (PReLU) (He '15 e.a).
 // Second, we derive a robust initialization method that particularly considers the rectifier nonlinearities.
 
+// https://godbolt.org/z/BzadW5
+
 [[nodiscard]] float elliotsig_activation ( float net_alpha_ ) noexcept {
     net_alpha_ /= 1.0f + std::abs ( net_alpha_ ); // branchless after optimization
     return std::forward<float> ( net_alpha_ );
