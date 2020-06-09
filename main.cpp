@@ -99,6 +99,17 @@ namespace Rng {
 
 sax::Rng & rng = Rng::generator ( );
 
+/*
+Combine forward and backward propagation and conclusions:
+So from part 1,2 and 3, we learn the following:
+
+1. Initialization is critical for deep neural nets, because of some interesting properties of the ReLu function (see part 1)
+
+2. The optimal initialization depends solely on the number of neurons in each layer.
+
+3. For best performance, we need to fulfill, that satisfies both the forward pass and the backward pass:
+*/
+
 template<typename T>
 struct reverse_container_wrapper {
     T & reverse_iterable;
@@ -139,8 +150,10 @@ void feed_forward ( ) noexcept {}
 // size). The log-Spherical Softmax by Vincent et al. (2015) and the log-Taylor Softmax.
 // In all the experiments, we used hidden layers with rectifiers, whose weights were initialized with a standard deviation in as
 // suggested in He et al. (2015).
-// First, we propose a Parametric Rectified Linear Unit (PReLU) (He '15 e.a).
+// First, we propose a Parametric Rectified Linear Unit (PReLU) (He '15 e.a).DONE
 // Second, we derive a robust initialization method that particularly considers the rectifier nonlinearities.
+// 2. The optimal initialization depends solely on the number of neurons in each layer.
+// We don't need this coz we only have 1 neuron in each layer.
 
 // https://godbolt.org/z/BzadW5
 
@@ -166,14 +179,14 @@ void feed_forward ( ) noexcept {}
     rectifier_activation_ = ( float ) n;
     return std::forward<float> ( rectifier_activation_ );
 }
-[[nodiscard]] float parametric_rectifier_activation ( float net_alpha_, float rectifier_alpha_ ) noexcept { // branchless
+[[nodiscard]] float parametric_rectifier_activation ( float net_alpha_, float rectifier_alpha_ ) noexcept {
     int n = 0;
     std::memcpy ( &n, &net_alpha_, 1 );
     n >>= 31;
     net_alpha_ *= ( float ) n + std::forward<float> ( rectifier_alpha_ ) * ( float ) not( ( bool ) n );
     return std::forward<float> ( net_alpha_ );
 }
-[[nodiscard]] float derivative_parametric_rectifier_activation ( float rectifier_activation_ ) noexcept { // branchless
+[[nodiscard]] float derivative_parametric_rectifier_activation ( float rectifier_activation_ ) noexcept {
     return derivative_rectifier_activation ( std::forward<float> ( rectifier_activation_ ) );
 }
 
@@ -183,30 +196,6 @@ void feed_forward ( ) noexcept {}
 [[nodiscard]] float derivative_leaky_rectifier_activation ( float rectifier_activation_ ) noexcept {
     return derivative_rectifier_activation ( std::forward<float> ( rectifier_activation_ ) );
 }
-
-/* Clang
-
-rectifier_activation(float):              # @rectifier_activation(float)
-        vxorps  xmm1, xmm1, xmm1
-        vmulss  xmm0, xmm0, xmm1
-        ret
-.LCPI6_0:
-        .long   1065353216              # float 1
-
-derivative_rectifier_activation(float): # @derivative_rectifier_activation_2(float)
-        vxorps  xmm0, xmm0, xmm0
-        ret
-
-parametric_rectifier_activation(float, float):  # @parametric_rectifier_activation(float, float)
-        vxorps  xmm2, xmm2, xmm2
-        vaddss  xmm1, xmm1, xmm2
-        vmulss  xmm0, xmm1, xmm0
-        ret
-.LCPI2_0:
-        .long   0x3f800000              # float 1
-
-
-*/
 
 [[nodiscard]] float normalized_exponential_function_activation ( float net_alpha_ ) noexcept {
     net_alpha_ = std::fpow ( euler_constant_ps, net_alpha_ );
