@@ -151,22 +151,49 @@ void feed_forward ( ) noexcept {}
     return std::forward<float> ( elliotsig_activation_ );
 }
 [[nodiscard]] float rectifier_activation ( float net_alpha_ ) noexcept {
-    net_alpha_ *= net_alpha_ >= 0.0f;
+    int n = 0;
+    std::memcpy ( &n, &net_alpha_, 1 );
+    n >>= 31;
+    net_alpha_ *= ( float ) n;
     return std::forward<float> ( net_alpha_ );
 }
 [[nodiscard]] float derivative_rectifier_activation ( float rectifier_activation_ ) noexcept {
-    rectifier_activation_ = rectifier_activation_ >= 0.0f;
+    int n = 0;
+    std::memcpy ( &n, &rectifier_activation_, 1 );
+    n >>= 31;
+    rectifier_activation_ = ( float ) n;
     return std::forward<float> ( rectifier_activation_ );
 }
 [[nodiscard]] float parametric_rectifier_activation ( float net_alpha_, float rectifier_alpha_ ) noexcept { // branchless
-    int n;
+    int n = 0;
     std::memcpy ( &n, &net_alpha_, 1 );
     n >>= 31;
     net_alpha_ *= ( float ) n + std::forward<float> ( rectifier_alpha_ ) * ( float ) not( ( bool ) n );
     return std::forward<float> ( net_alpha_ );
 }
+[[nodiscard]] float derivative_parametric_rectifier_activation ( float rectifier_activation_ ) noexcept { // branchless
+    return derivative_rectifier_activation ( std::forward<float> ( rectifier_activation_ ) );
+}
+
+[[nodiscard]] float leaky_rectifier_activation ( float net_alpha_ ) noexcept {
+    return parametric_rectifier_activation ( std::forward<float> ( net_alpha_ ), 0.01f );
+}
+[[nodiscard]] float derivative_leaky_rectifier_activation ( float rectifier_activation_ ) noexcept {
+    return derivative_rectifier_activation ( std::forward<float> ( rectifier_activation_ ) );
+}
 
 /* Clang
+
+rectifier_activation(float):              # @rectifier_activation(float)
+        vxorps  xmm1, xmm1, xmm1
+        vmulss  xmm0, xmm0, xmm1
+        ret
+.LCPI6_0:
+        .long   1065353216              # float 1
+
+derivative_rectifier_activation(float): # @derivative_rectifier_activation_2(float)
+        vxorps  xmm0, xmm0, xmm0
+        ret
 
 parametric_rectifier_activation(float, float):  # @parametric_rectifier_activation(float, float)
         vxorps  xmm2, xmm2, xmm2
@@ -176,11 +203,9 @@ parametric_rectifier_activation(float, float):  # @parametric_rectifier_activati
 .LCPI2_0:
         .long   0x3f800000              # float 1
 
+
 */
 
-[[nodiscard]] float leaky_rectifier_activation ( float net_alpha_ ) noexcept {
-    return parametric_rectifier_activation ( std::forward<float> ( net_alpha_ ), 0.01f );
-}
 [[nodiscard]] float normalized_exponential_function_activation ( float net_alpha_ ) noexcept {
     net_alpha_ = std::fpow ( euler_constant_ps, net_alpha_ );
     return std::forward<float> ( net_alpha_ );
