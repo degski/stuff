@@ -158,13 +158,26 @@ void feed_forward ( ) noexcept {}
     rectifier_activation_ = rectifier_activation_ >= 0.0f;
     return std::forward<float> ( rectifier_activation_ );
 }
-[[nodiscard]] float parametric_rectifier_activation ( float net_alpha_, float rectifier_alpha_ ) noexcept {
+[[nodiscard]] float parametric_rectifier_activation ( float net_alpha_, float rectifier_alpha_ ) noexcept { // branchless
     int n;
     std::memcpy ( &n, &net_alpha_, 1 );
     n >>= 31;
-    net_alpha_ *= ( float ) n + rectifier_alpha_ * ( float ) not( ( bool ) n );
+    net_alpha_ *= ( float ) n + std::forward<float> ( rectifier_alpha_ ) * ( float ) not( ( bool ) n );
     return std::forward<float> ( net_alpha_ );
 }
+
+/* Clang
+
+parametric_rectifier_activation(float, float):  # @parametric_rectifier_activation(float, float)
+        vxorps  xmm2, xmm2, xmm2
+        vaddss  xmm1, xmm1, xmm2
+        vmulss  xmm0, xmm1, xmm0
+        ret
+.LCPI2_0:
+        .long   0x3f800000              # float 1
+
+*/
+
 [[nodiscard]] float leaky_rectifier_activation ( float net_alpha_ ) noexcept {
     return parametric_rectifier_activation ( std::forward<float> ( net_alpha_ ), 0.01f );
 }
